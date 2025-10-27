@@ -2,6 +2,7 @@ import copy
 import networkx as nx
 from typing import List, Dict, Set, Any, Tuple, Optional
 import random
+import matplotlib.pyplot as plt
 
 
 # 备注：此算法实现依赖 'networkx' 库。
@@ -174,6 +175,28 @@ class SRTIStrongMatcher:
                 if q in active_agents:
                     # 添加从 p (U) 到 q (V) 的边
                     G.add_edge(f"u_{p}", f"v_{q}")
+
+        # Define positions using bipartite layout
+        pos = nx.bipartite_layout(G, U_nodes)
+
+
+        U_nodes = {f"u_{p}" for p in active_agents}
+        node_colors = ["#1f78b4" if node in U_nodes else "#33a02c" for node in G.nodes()]  # Blue for U, Green for V
+
+        # 4. Draw the graph components separately
+        #    Draw nodes with increased size
+        nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=800, alpha=0.9)
+        #    Draw edges
+        nx.draw_networkx_edges(G, pos, width=1.5, edge_color="gray", alpha=0.6)
+        #    Draw labels with enhanced readability
+        nx.draw_networkx_labels(G, pos, font_size=10, font_color="black", font_weight="bold")
+
+        # 5. Final touches
+        plt.axis("off")  # Turn off the axes for clarity
+        plt.tight_layout()  # Adjust layout to minimize padding
+        plt.title("Semi-Assignment Graph", fontsize=8)
+        plt.show()
+
         return G
 
     def _find_critical_set(self, G: nx.Graph, active_agents: Set) -> Tuple[Set, Set]:
@@ -281,13 +304,12 @@ class SRTIStrongMatcher:
 
             # (Line 11) Form the semi-assignment graph
             G_semi = self._build_semi_assignment_graph(local_prefs, active_agents)
-
             # (Line 12) Find the critical set Z
             if not G_semi.nodes():
                 Z, N_Z = set(), set()
             else:
                 Z, N_Z = self._find_critical_set(G_semi, active_agents)
-
+            print(f"Critical set Z and N_z len are {len(Z)} and {len(N_Z)} respectively,{Z} and {N_Z}")
             # (Line 17) Until Z = \emptyset
             if not Z:
                 break
@@ -405,6 +427,28 @@ class SRTIStrongMatcher:
                 if y in active_agents and self.agent_order_map[x] > self.agent_order_map[y]:
                     G_final.add_edge(x, y)
 
+        N_nodes = {f"u_{p}" for p in active_agents}
+        # Define positions using bipartite layout
+        pos = nx.bipartite_layout(G_final, N_nodes)
+
+
+        N_nodes = {f"u_{p}" for p in active_agents}
+        node_colors = ["#1f78b4" if node in N_nodes else "#33a02c" for node in G_final.nodes()]  # Blue for U, Green for V
+
+        # 4. Draw the graph components separately
+        #    Draw nodes with increased size
+        nx.draw_networkx_nodes(G_final, pos, node_color=node_colors, node_size=800, alpha=0.9)
+        #    Draw edges
+        nx.draw_networkx_edges(G_final, pos, width=1.5, edge_color="gray", alpha=0.6)
+        #    Draw labels with enhanced readability
+        nx.draw_networkx_labels(G_final, pos, font_size=10, font_color="black", font_weight="bold")
+
+        # 5. Final touches
+        plt.axis("off")  # Turn off the axes for clarity
+        plt.tight_layout()  # Adjust layout to minimize padding
+        plt.title("Final-Assignment Graph", fontsize=8)
+        plt.show()
+
         try:
             # 找到一个最大基数匹配（即最大权重匹配，权重全为1）
             matching = nx.max_weight_matching(G_final, maxcardinality=True)
@@ -419,6 +463,9 @@ class SRTIStrongMatcher:
 
         except Exception as e:
             return None, f"Error finding perfect matching in final graph: {e}"
+
+
+
 
     def find_matching(self) -> Tuple[Optional[Set[Tuple]], str]:
         """
@@ -532,7 +579,7 @@ def generate_random_prefs(num_agents: int, max_tie_size: Optional[int] = None) -
 
     return prefs
 if __name__ == '__main__':
-    prefs=generate_random_prefs(num_agents=10)
+    prefs=generate_random_prefs(num_agents=6)
     print(prefs)
     SRTI=SRTIStrongMatcher(prefs)
     matching,_= SRTI.find_matching()
