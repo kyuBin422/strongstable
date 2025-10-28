@@ -3,6 +3,9 @@ import networkx as nx
 from typing import List, Dict, Set, Any, Tuple, Optional
 import random
 import matplotlib.pyplot as plt
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # 备注：此算法实现依赖 'networkx' 库。
@@ -157,7 +160,7 @@ class SRTIStrongMatcher:
 
         return deleted
 
-    def _build_semi_assignment_graph(self, prefs: Dict, active_agents: Set) -> nx.Graph:
+    def _build_semi_assignment_graph(self, prefs: Dict, active_agents: Set, visualize: bool=False) -> nx.Graph:
         """
         构建半分配图 G=(U, V, E)。
         U (bipartite=0) 是提议节点，V (bipartite=1) 是接收节点。
@@ -175,27 +178,27 @@ class SRTIStrongMatcher:
                 if q in active_agents:
                     # 添加从 p (U) 到 q (V) 的边
                     G.add_edge(f"u_{p}", f"v_{q}")
+        if visualize:
+            # Define positions using bipartite layout
+            pos = nx.bipartite_layout(G, U_nodes)
 
-        # Define positions using bipartite layout
-        pos = nx.bipartite_layout(G, U_nodes)
 
+            U_nodes = {f"u_{p}" for p in active_agents}
+            node_colors = ["#1f78b4" if node in U_nodes else "#33a02c" for node in G.nodes()]  # Blue for U, Green for V
 
-        U_nodes = {f"u_{p}" for p in active_agents}
-        node_colors = ["#1f78b4" if node in U_nodes else "#33a02c" for node in G.nodes()]  # Blue for U, Green for V
+            # 4. Draw the graph components separately
+            #    Draw nodes with increased size
+            nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=800, alpha=0.9)
+            #    Draw edges
+            nx.draw_networkx_edges(G, pos, width=1.5, edge_color="gray", alpha=0.6)
+            #    Draw labels with enhanced readability
+            nx.draw_networkx_labels(G, pos, font_size=10, font_color="black", font_weight="bold")
 
-        # 4. Draw the graph components separately
-        #    Draw nodes with increased size
-        nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=800, alpha=0.9)
-        #    Draw edges
-        nx.draw_networkx_edges(G, pos, width=1.5, edge_color="gray", alpha=0.6)
-        #    Draw labels with enhanced readability
-        nx.draw_networkx_labels(G, pos, font_size=10, font_color="black", font_weight="bold")
-
-        # 5. Final touches
-        plt.axis("off")  # Turn off the axes for clarity
-        plt.tight_layout()  # Adjust layout to minimize padding
-        plt.title("Semi-Assignment Graph", fontsize=8)
-        plt.show()
+            # 5. Final touches
+            plt.axis("off")  # Turn off the axes for clarity
+            plt.tight_layout()  # Adjust layout to minimize padding
+            plt.title("Semi-Assignment Graph", fontsize=8)
+            plt.show()
 
         return G
 
@@ -209,7 +212,7 @@ class SRTIStrongMatcher:
 
         if not U_nodes:
             return set(), set()  # 图为空
-
+        # TODO: double check correctness of deficiency here
         # 1. 找到一个最大匹配 M
         matching = nx.bipartite.maximum_matching(G, top_nodes=U_nodes)
 
@@ -233,10 +236,10 @@ class SRTIStrongMatcher:
         for start_node in U_unmatched:
             reachable_nodes.update(nx.descendants(D, start_node))
 
-        # 5. Z 是 A \cap U, N(Z) 是 A \cap V
         Z_nodes = reachable_nodes.intersection(U_nodes)
         N_Z_nodes = reachable_nodes.intersection(V_nodes)  # N(Z) = A \cap V
 
+        # 5. Z 是 A \cap U, N(Z) 是 A \cap V
         # 转换回 agent 名称
         Z = {n.split('_', 1)[1] for n in Z_nodes}
         N_Z = {n.split('_', 1)[1] for n in N_Z_nodes}
@@ -257,8 +260,17 @@ class SRTIStrongMatcher:
         local_ranks = self._build_ranks(local_prefs)
         active_agents = self._get_active_agents(local_prefs)
 
-        while True:  # Repeat...Until Z = \emptyset
+        # 进度检测
+        prev_state = None
+        iteration = 0
+        max_iterations = len(active_agents)**2  # 防御性上限，可根据实例规模调整
 
+        while True:  # Repeat...Until Z = \emptyset
+            iteration += 1
+            if iteration > max_iterations:
+                logger.error("Exceeded max iterations in _stabilize (%d). Breaking to avoid infinite loop.",
+                             max_iterations)
+                break
             # (Lines 3-10) While some agent p is free...
             # 我们使用一个栈来进行迭代，因为打破半分配可能会使 agent 重新变为 free
             free_agents_stack = list({p for p in active_agents if not local_semi.get(p)})
@@ -309,7 +321,10 @@ class SRTIStrongMatcher:
                 Z, N_Z = set(), set()
             else:
                 Z, N_Z = self._find_critical_set(G_semi, active_agents)
-            print(f"Critical set Z and N_z len are {len(Z)} and {len(N_Z)} respectively,{Z} and {N_Z}")
+            logger.info("Critical set Z and N_z len are %d and %d respectively, Z=%s, N_Z=%s", len(Z), len(N_Z), Z,
+                         N_Z)
+            logger.info("Prefs snapshot: %s", local_prefs)
+
             # (Line 17) Until Z = \emptyset
             if not Z:
                 break
@@ -427,28 +442,6 @@ class SRTIStrongMatcher:
                 if y in active_agents and self.agent_order_map[x] > self.agent_order_map[y]:
                     G_final.add_edge(x, y)
 
-        N_nodes = {f"u_{p}" for p in active_agents}
-        # Define positions using bipartite layout
-        pos = nx.bipartite_layout(G_final, N_nodes)
-
-
-        N_nodes = {f"u_{p}" for p in active_agents}
-        node_colors = ["#1f78b4" if node in N_nodes else "#33a02c" for node in G_final.nodes()]  # Blue for U, Green for V
-
-        # 4. Draw the graph components separately
-        #    Draw nodes with increased size
-        nx.draw_networkx_nodes(G_final, pos, node_color=node_colors, node_size=800, alpha=0.9)
-        #    Draw edges
-        nx.draw_networkx_edges(G_final, pos, width=1.5, edge_color="gray", alpha=0.6)
-        #    Draw labels with enhanced readability
-        nx.draw_networkx_labels(G_final, pos, font_size=10, font_color="black", font_weight="bold")
-
-        # 5. Final touches
-        plt.axis("off")  # Turn off the axes for clarity
-        plt.tight_layout()  # Adjust layout to minimize padding
-        plt.title("Final-Assignment Graph", fontsize=8)
-        plt.show()
-
         try:
             # 找到一个最大基数匹配（即最大权重匹配，权重全为1）
             matching = nx.max_weight_matching(G_final, maxcardinality=True)
@@ -539,7 +532,7 @@ def generate_random_prefs(num_agents: int, max_tie_size: Optional[int] = None) -
         raise ValueError("参与者数量 (num_agents) 必须至少为 1。")
 
     if max_tie_size is not None and max_tie_size < 1:
-        print(f"警告: max_tie_size ({max_tie_size}) 小于 1。将其设置为 1（严格偏好）。")
+        logger.warning("警告: max_tie_size (%d) 小于 1。将其设置为 1（严格偏好）。", max_tie_size)
         max_tie_size = 1
 
     agents = [f'agent_{i + 1}' for i in range(num_agents)]
@@ -579,8 +572,12 @@ def generate_random_prefs(num_agents: int, max_tie_size: Optional[int] = None) -
 
     return prefs
 if __name__ == '__main__':
+    # 配置根日志记录器，确保 INFO 级别及以上会输出到控制台
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
+    # 将模块级 logger 的级别显式设置为 INFO（保障在特殊配置下也能输出）
+    logger.setLevel(logging.INFO)
     prefs=generate_random_prefs(num_agents=6)
-    print(prefs)
+    logger.info("Generated prefs: %s", prefs)
     SRTI=SRTIStrongMatcher(prefs)
     matching,_= SRTI.find_matching()
-    print(matching)
+    logger.info("Matching: %s", matching)
