@@ -323,7 +323,10 @@ class SRTIStrongMatcher:
                 Z, N_Z = self._find_critical_set(G_semi, active_agents)
             logger.info("Critical set Z and N_z len are %d and %d respectively, Z=%s, N_Z=%s", len(Z), len(N_Z), Z,
                          N_Z)
-            logger.info("Prefs snapshot: %s", local_prefs)
+            snapshot_lines = [f"Prefs snapshot (iter {iteration}):"]
+            for agent in sorted(local_prefs):
+                snapshot_lines.append(f"{agent}: {local_prefs[agent]}")
+            logger.info("\n".join(snapshot_lines))
 
             # (Line 17) Until Z = \emptyset
             if not Z:
@@ -576,8 +579,12 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
     # 将模块级 logger 的级别显式设置为 INFO（保障在特殊配置下也能输出）
     logger.setLevel(logging.INFO)
-    prefs=generate_random_prefs(num_agents=6)
-    logger.info("Generated prefs: %s", prefs)
+    prefs=generate_random_prefs(num_agents=8, max_tie_size=3)
+    # python
+    snapshot_lines = ["Generated prefs:"]
+    for agent in sorted(prefs):
+        snapshot_lines.append(f"{agent}: {prefs[agent]}")
+    logger.info("\n".join(snapshot_lines))
     SRTI=SRTIStrongMatcher(prefs)
     matching,_= SRTI.find_matching()
     logger.info("Matching: %s", matching)

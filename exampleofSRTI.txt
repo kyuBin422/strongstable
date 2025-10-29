@@ -1,0 +1,45 @@
+C:\Users\YJY-PC\miniforge3\envs\paper\python.exe C:\Users\YJY-PC\Downloads\strongstable\implementation_gemini.py
+INFO:__main__:Generated prefs:
+agent_1: [['agent_6', 'agent_7'], ['agent_3', 'agent_4'], ['agent_5', 'agent_2', 'agent_8']]
+agent_2: [['agent_6'], ['agent_8', 'agent_5', 'agent_7'], ['agent_4', 'agent_1'], ['agent_3']]
+agent_3: [['agent_7'], ['agent_8'], ['agent_5'], ['agent_2', 'agent_6'], ['agent_1'], ['agent_4']]
+agent_4: [['agent_1', 'agent_6'], ['agent_7'], ['agent_2', 'agent_5', 'agent_3'], ['agent_8']]
+agent_5: [['agent_7', 'agent_1'], ['agent_3', 'agent_2'], ['agent_6', 'agent_8'], ['agent_4']]
+agent_6: [['agent_8'], ['agent_1', 'agent_4', 'agent_2'], ['agent_5', 'agent_3', 'agent_7']]
+agent_7: [['agent_4', 'agent_6'], ['agent_3', 'agent_2'], ['agent_1', 'agent_5'], ['agent_8']]
+agent_8: [['agent_7', 'agent_1'], ['agent_2', 'agent_5', 'agent_4'], ['agent_6'], ['agent_3']]
+INFO:__main__:Critical set Z and N_z len are 2 and 1 respectively, Z={'agent_1', 'agent_2'}, N_Z={'agent_6'}
+INFO:__main__:Prefs snapshot (iter 1):
+agent_1: [['agent_6'], ['agent_4']]
+agent_2: [['agent_6'], ['agent_8', 'agent_5', 'agent_7']]
+agent_3: [['agent_7'], ['agent_5']]
+agent_4: [['agent_1', 'agent_6'], ['agent_7']]
+agent_5: [['agent_3', 'agent_2'], ['agent_8']]
+agent_6: [['agent_8'], ['agent_1', 'agent_4', 'agent_2']]
+agent_7: [['agent_4'], ['agent_3', 'agent_2']]
+agent_8: [['agent_2', 'agent_5'], ['agent_6']]
+INFO:__main__:Critical set Z and N_z len are 3 and 2 respectively, Z={'agent_5', 'agent_7', 'agent_8'}, N_Z={'agent_2', 'agent_3'}
+INFO:__main__:Prefs snapshot (iter 2):
+agent_1: [['agent_4']]
+agent_2: [['agent_8', 'agent_5', 'agent_7']]
+agent_3: [['agent_7'], ['agent_5']]
+agent_4: [['agent_1']]
+agent_5: [['agent_3', 'agent_2']]
+agent_6: []
+agent_7: [['agent_3', 'agent_2']]
+agent_8: [['agent_2']]
+INFO:__main__:Critical set Z and N_z len are 2 and 1 respectively, Z={'agent_5', 'agent_8'}, N_Z={'agent_2'}
+...
+INFO:__main__:Prefs snapshot (iter 64):
+agent_1: [['agent_4']]
+agent_2: [['agent_8', 'agent_5', 'agent_7']]
+agent_3: [['agent_7']]
+agent_4: [['agent_1']]
+agent_5: [['agent_2']]
+agent_6: []
+agent_7: [['agent_3', 'agent_2']]
+agent_8: [['agent_2']]
+ERROR:__main__:Exceeded max iterations in _stabilize (64). Breaking to avoid infinite loop.
+INFO:__main__:Matching: None
+
+Process finished with exit code 0
